@@ -163,6 +163,7 @@ jobs:
 
       - name: Run Allure Action
         uses: allure-framework/allure-action@v0
+        if: always() && github.ref == 'refs/heads/master'
         with:
           report-directory: "./allure-report"
           github-token: ${{ secrets.GITHUB_TOKEN }}
