@@ -1,0 +1,18 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "title": "GitLab API error",
+  "description": "GitLab is inconsistent here and that inconsistency is part of the contract worth pinning: validation failures come back under 'error', while authorization and lookup failures come back under 'message'. Exactly one must be present, and 'message' is sometimes a string and sometimes an object keyed by field.",
+  "type": "object",
+  "anyOf": [
+    { "required": ["message"] },
+    { "required": ["error"] }
+  ],
+  "properties": {
+    "message": {
+      "type": ["string", "object", "array"]
+    },
+    "error": {
+      "type": "string"
+    }
+  }
+}

@@ -1,0 +1,84 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "title": "GitLab issue collection",
+  "description": "The list endpoint must always return a JSON array, including for a single result and for an empty result. Each element must satisfy the single-issue contract.",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "required": [
+      "id",
+      "iid",
+      "project_id",
+      "title",
+      "state",
+      "labels",
+      "confidential",
+      "web_url",
+      "created_at",
+      "updated_at",
+      "author"
+    ],
+    "properties": {
+      "id": {
+        "type": "integer",
+        "minimum": 1
+      },
+      "iid": {
+        "type": "integer",
+        "minimum": 1
+      },
+      "project_id": {
+        "type": "integer",
+        "minimum": 1
+      },
+      "title": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Not constrained by maxLength on purpose. The 255-character limit is request validation, asserted by IssueBoundaryTest.acceptsTitleAtMaximumLength and rejectsTitleBeyondMaximumLength against Issue.TITLE_MAX_LENGTH. Asserting it here would instead claim the API never RETURNS a longer title, so raising the limit would fail every read of a legitimately created issue rather than the one boundary test meant to detect the change. minLength is different: an issue always having a non-empty title is a genuine response invariant."
+      },
+      "state": {
+        "type": "string",
+        "enum": [
+          "opened",
+          "closed"
+        ]
+      },
+      "labels": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "confidential": {
+        "type": "boolean"
+      },
+      "web_url": {
+        "type": "string",
+        "pattern": "^https?://"
+      },
+      "created_at": {
+        "type": "string"
+      },
+      "updated_at": {
+        "type": "string"
+      },
+      "author": {
+        "type": "object",
+        "required": [
+          "id",
+          "username"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "username": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    }
+  }
+}
