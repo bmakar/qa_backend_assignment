@@ -4,27 +4,167 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.abnamro</groupId>
-    <artifactId>qa-backend-assignment</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <groupId>com.qa.gitlab</groupId>
+    <artifactId>gitlab-issues-api-tests</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+    <packaging>jar</packaging>
+
+    <name>GitLab Issues API Client and Tests</name>
+    <description>
+        A reusable client for the GitLab Issues REST API (src/main) and the CRUD, edge-case and
+        contract suite that exercises it (src/test). The client carries no test-framework
+        dependency, so it can also back fixtures, data seeding and tooling.
+    </description>
 
     <properties>
-        <maven.compiler.source>17</maven.compiler.source>
-        <maven.compiler.target>17</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <maven.compiler.release>17</maven.compiler.release>
+
+        <junit.version>5.11.4</junit.version>
+        <rest-assured.version>5.5.0</rest-assured.version>
+        <assertj.version>3.26.3</assertj.version>
+        <jackson.version>2.18.2</jackson.version>
+        <lombok.version>1.18.36</lombok.version>
+        <slf4j.version>2.0.16</slf4j.version>
+        <allure.version>2.29.0</allure.version>
+        <junit-pioneer.version>2.3.0</junit-pioneer.version>
+
+        <maven-compiler-plugin.version>3.13.0</maven-compiler-plugin.version>
+        <maven-surefire-plugin.version>3.5.2</maven-surefire-plugin.version>
+        <maven-enforcer-plugin.version>3.5.0</maven-enforcer-plugin.version>
+        <allure-maven-plugin.version>2.15.2</allure-maven-plugin.version>
     </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.junit</groupId>
+                <artifactId>junit-bom</artifactId>
+                <version>${junit.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson</groupId>
+                <artifactId>jackson-bom</artifactId>
+                <version>${jackson.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>io.qameta.allure</groupId>
+                <artifactId>allure-bom</artifactId>
+                <version>${allure.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <dependencies>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-api</artifactId>
-            <version>5.10.0</version>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!--
+          Supplies ReplaceCamelCaseAndUnderscoreAndNumber, the DisplayNameGenerator configured in
+          junit-platform.properties - a real, published equivalent of the class JUnit's own docs only
+          show as an example and never ship (see the comment there for that history). Declares
+          junit-bom 5.11.2 and jackson-databind 2.14.2 as transitive runtime dependencies; both are
+          overridden by this project's own dependencyManagement (junit-bom 5.11.4, jackson-bom
+          2.18.2), so <dependencyConvergence/> below still holds on one resolved version of each.
+        -->
+        <dependency>
+            <groupId>org.junit-pioneer</groupId>
+            <artifactId>junit-pioneer</artifactId>
+            <version>${junit-pioneer.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <!--
+          Compile scope, not test: these are the API client's own dependencies. Everything a test
+          needs and the client must not touch - JUnit, AssertJ, Allure, the schema validator - stays
+          test-scoped, so javac refuses an assertion smuggled into src/main.
+        -->
+        <dependency>
+            <groupId>io.rest-assured</groupId>
+            <artifactId>rest-assured</artifactId>
+            <version>${rest-assured.version}</version>
+        </dependency>
+
+        <!--
+          Validates responses against a JSON Schema. The typed models cannot do this job: unknown
+          properties are ignored and a missing field deserializes to null, so a response that
+          silently dropped a field would still satisfy every model-based assertion.
+        -->
+        <dependency>
+            <groupId>io.rest-assured</groupId>
+            <artifactId>json-schema-validator</artifactId>
+            <version>${rest-assured.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.assertj</groupId>
+            <artifactId>assertj-core</artifactId>
+            <version>${assertj.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-jsr310</artifactId>
+        </dependency>
+
+        <!--
+          Allure. Two deliberate omissions:
+
+          - allure-rest-assured is NOT used. It reads headers straight off the request
+            specification with no redaction hook, which writes the PRIVATE-TOKEN into
+            allure-results and from there into a CI artifact. AllureAttachmentFilter builds the
+            same attachment types against the same templates, with credentials masked.
+          - aspectjweaver is NOT wired into surefire's argLine. It is only needed for the
+            @Step and @Attachment annotations, which this suite does not use; attachments go
+            through the programmatic API, which needs no weaving. Skipping it keeps `mvn test`
+            free of a javaagent.
+        -->
+        <dependency>
+            <groupId>io.qameta.allure</groupId>
+            <artifactId>allure-junit5</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-engine</artifactId>
-            <version>5.10.0</version>
+            <groupId>io.qameta.allure</groupId>
+            <artifactId>allure-attachments</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>${lombok.version}</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <!--
+          The client logs against the slf4j API and deliberately ships no binding: choosing one is
+          the consuming application's call. slf4j-simple is test-scoped, for this suite's own output.
+        -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>${slf4j.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-simple</artifactId>
+            <version>${slf4j.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -33,14 +173,123 @@
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <version>2.22.2</version>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>${maven-compiler-plugin.version}</version>
+                <configuration>
+                    <!-- Declared explicitly so the build does not depend on classpath scan order. -->
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                            <version>${lombok.version}</version>
+                        </path>
+                    </annotationProcessorPaths>
+                </configuration>
             </plugin>
+
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-failsafe-plugin</artifactId>
-                <version>2.22.2</version>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>${maven-surefire-plugin.version}</version>
+                <configuration>
+                    <!--
+                      A mistyped -Dtest or -Dgroups must fail, not silently run nothing and report
+                      success. This is the failure mode that lets a broken filter look like a green
+                      build for weeks.
+                    -->
+                    <failIfNoSpecifiedTests>true</failIfNoSpecifiedTests>
+                    <failIfNoTests>true</failIfNoTests>
+                    <!--
+                      Forced because the Windows console defaults to a legacy code page, which turns
+                      log output into '?' characters and would corrupt the unicode and emoji titles
+                      the boundary suite round-trips. Java 18+ defaults to UTF-8; this makes 17
+                      behave the same, so a run looks identical on every platform.
+                    -->
+                    <argLine>-Dfile.encoding=UTF-8 -Dsun.stdout.encoding=UTF-8 -Dsun.stderr.encoding=UTF-8</argLine>
+                    <systemPropertyVariables>
+                        <gitlab.baseUri>${gitlab.baseUri}</gitlab.baseUri>
+                        <gitlab.token>${gitlab.token}</gitlab.token>
+                        <gitlab.projectId>${gitlab.projectId}</gitlab.projectId>
+                        <gitlab.verboseLogging>${gitlab.verboseLogging}</gitlab.verboseLogging>
+                        <org.slf4j.simpleLogger.defaultLogLevel>${org.slf4j.simpleLogger.defaultLogLevel}</org.slf4j.simpleLogger.defaultLogLevel>
+                    </systemPropertyVariables>
+                </configuration>
+            </plugin>
+
+            <!-- Generates the HTML report from allure-results: mvn allure:report -->
+            <plugin>
+                <groupId>io.qameta.allure</groupId>
+                <artifactId>allure-maven</artifactId>
+                <version>${allure-maven-plugin.version}</version>
+                <configuration>
+                    <reportVersion>${allure.version}</reportVersion>
+                    <resultsDirectory>${project.build.directory}/allure-results</resultsDirectory>
+                </configuration>
+            </plugin>
+
+            <!-- Fails fast with a readable message instead of an obscure bytecode error. -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <version>${maven-enforcer-plugin.version}</version>
+                <executions>
+                    <execution>
+                        <id>enforce-environment</id>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <requireJavaVersion>
+                                    <version>[17,)</version>
+                                </requireJavaVersion>
+                                <requireMavenVersion>
+                                    <version>[3.8,)</version>
+                                </requireMavenVersion>
+                                <dependencyConvergence/>
+                            </rules>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <!-- Allows -Dgitlab.* to be omitted; Config falls back to environment variables. -->
+        <profile>
+            <id>defaults</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <properties>
+                <gitlab.baseUri/>
+                <gitlab.token/>
+                <gitlab.projectId/>
+                <gitlab.verboseLogging>false</gitlab.verboseLogging>
+                <org.slf4j.simpleLogger.defaultLogLevel>info</org.slf4j.simpleLogger.defaultLogLevel>
+            </properties>
+        </profile>
+
+        <!--
+          mvn test -Pverbose: dumps every request/response (not just failing ones, see
+          GitLabClient.VERBOSE) and drops the slf4j level to debug. Off by default so a normal run
+          stays quiet.
+
+          Repeats the gitlab.* placeholders from "defaults" rather than relying on it: activating
+          this profile with -P turns activeByDefault off on "defaults", so without its own copies
+          here those three would resolve to the literal, un-interpolated "${gitlab.baseUri}" text
+          instead of falling through to Config's environment-variable/properties-file lookup.
+        -->
+        <profile>
+            <id>verbose</id>
+            <properties>
+                <gitlab.baseUri/>
+                <gitlab.token/>
+                <gitlab.projectId/>
+                <gitlab.verboseLogging>true</gitlab.verboseLogging>
+                <org.slf4j.simpleLogger.defaultLogLevel>debug</org.slf4j.simpleLogger.defaultLogLevel>
+            </properties>
+        </profile>
+    </profiles>
 </project>
