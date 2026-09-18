@@ -102,7 +102,7 @@ jobs:
           {
             echo "### Live API tests"
             echo
-            ./scripts/test-summary.sh || true
+            bash ./scripts/test-summary.sh || true
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload surefire reports
