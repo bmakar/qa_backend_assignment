@@ -222,7 +222,7 @@ without downloading an artifact. The workflow has a job timeout, a `concurrency`
 pushes cannot run the suite against the same project simultaneously, and a minimal
 `permissions` block.
 
-Set `GITLAB_TOKEN` (required) and `GITLAB_PROJECT_ID` (optional) as repository secrets.
+NOTE: Set `GITLAB_TOKEN` (required) and `GITLAB_PROJECT_ID` (optional) as repository secrets in github repo settings.
 
 
 
