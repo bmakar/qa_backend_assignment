@@ -156,3 +156,12 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_branch: gh-pages
           publish_dir: allure-report
+
+      - name: Run Allure Action
+        uses: allure-framework/allure-action@v0
+        with:
+          report-directory: "./allure-report"
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          sections: |
+            new
+            flaky
