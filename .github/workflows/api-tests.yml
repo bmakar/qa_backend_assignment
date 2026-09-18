@@ -49,9 +49,13 @@ jobs:
     name: Live API tests
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    # Needed only to push the generated Allure report to the gh-pages branch.
+    # contents: write to push the generated Allure report to the gh-pages branch;
+    # checks: write for action-junit-report's check run and allure-action's quality gate;
+    # pull-requests: write for allure-action's PR comment.
     permissions:
       contents: write
+      checks: write
+      pull-requests: write
     # Secrets are not exposed to workflows triggered by a fork's pull request, so the
     # job would fail on a missing token rather than on anything meaningful. Skip it
     # there and let the compile job be the signal.
