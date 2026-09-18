@@ -2,7 +2,7 @@ name: API Tests
 
 on:
   push:
-    branches: [main]
+    branches: [master]
   pull_request:
   schedule:
     # Daily. An external API is a moving target: a monthly run tells you it broke
