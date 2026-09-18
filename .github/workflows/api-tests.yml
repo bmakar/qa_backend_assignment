@@ -125,7 +125,7 @@ jobs:
       # graphs are permanently empty, which is most of the reason to run Allure at all.
       - name: Restore Allure history
         uses: actions/checkout@v4
-        if: always() && github.ref == 'refs/heads/main'
+        if: always() && github.ref == 'refs/heads/master'
         continue-on-error: true
         with:
           ref: gh-pages
@@ -135,23 +135,23 @@ jobs:
       # image (openjdk:8-jre-alpine), which Docker Hub has since pulled. Built directly with
       # the Allure CLI instead, copying the restored history/ into the results first.
       - name: Copy previous Allure history
-        if: always() && github.ref == 'refs/heads/main'
+        if: always() && github.ref == 'refs/heads/master'
         continue-on-error: true
         run: |
           mkdir -p target/allure-results/history
           cp -r gh-pages/history/. target/allure-results/history/ 2>/dev/null || true
 
       - name: Install Allure commandline
-        if: always() && github.ref == 'refs/heads/main'
+        if: always() && github.ref == 'refs/heads/master'
         run: npm install -g allure-commandline
 
       - name: Build Allure report
-        if: always() && github.ref == 'refs/heads/main'
+        if: always() && github.ref == 'refs/heads/master'
         run: allure generate target/allure-results --clean -o allure-report
 
       - name: Publish Allure report to Pages
         uses: peaceiris/actions-gh-pages@v4
-        if: always() && github.ref == 'refs/heads/main'
+        if: always() && github.ref == 'refs/heads/master'
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_branch: gh-pages
