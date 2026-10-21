@@ -4,10 +4,10 @@ on:
   push:
     branches: [master]
   pull_request:
-  schedule:
+ # schedule:
     # Daily. An external API is a moving target: a monthly run tells you it broke
     # sometime in the last month, which is not actionable.
-    - cron: "0 6 * * *"
+  #  - cron: "0 6 * * *"
   workflow_dispatch:
     inputs:
       groups:
